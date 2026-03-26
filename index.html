@@ -15,7 +15,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,179,237,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(99,179,237,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,179,237,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(99,179,237,0.06) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
 
 /* Layout */
 .app{display:flex;flex-direction:column;height:100vh;position:relative;z-index:1}
@@ -128,26 +128,13 @@ textarea::placeholder{color:var(--muted)}
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="model-badge" id="model-label">gemini-2.0-flash</span>
+      <span class="model-badge" id="model-label">gemini-1.5-flash</span>
       <div class="status-pill"><div class="dot"></div><span id="status-text">ONLINE</span></div>
-      <button onclick="logout()" style="font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);padding:4px 10px;cursor:pointer;display:none" id="logout-btn">CHANGE KEY</button>
+
     </div>
   </header>
 
-  <!-- API Key Setup -->
-  <div class="setup-screen" id="setup-screen">
-    <div class="setup-card">
-      <div style="font-size:32px;margin-bottom:12px">🔑</div>
-      <h2>Enter your Gemini API Key</h2>
-      <p>Your key is stored locally in your browser and never sent anywhere except directly to Google's API.</p>
-      <input type="password" class="setup-input" id="api-key-input" placeholder="AIza..." autocomplete="off">
-      <button class="setup-btn" onclick="saveKey()">START CHATTING →</button>
-      <div class="setup-note">
-        Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a><br>
-        Use model: <code style="color:var(--cyan)">gemini-2.0-flash</code> (free tier, 1500 req/day)
-      </div>
-    </div>
-  </div>
+  <!-- No setup screen -- key injected at build time -->
 
   <!-- Main Chat -->
   <div id="chat-screen" style="display:none;flex:1;flex-direction:column;overflow:hidden">
@@ -195,33 +182,15 @@ textarea::placeholder{color:var(--muted)}
 </div>
 
 <script>
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 const STATS_URL  = 'https://thousif3.github.io/talon-stats/stats.json';
 
-let apiKey    = '';
+let apiKey    = '__GEMINI_API_KEY__'; // replaced by TALON at build time
 let talonCtx  = null;
 let messages  = []; // conversation history
 
-// ── Key management ────────────────────────────────────────────
-function saveKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key || !key.startsWith('AIza')) {
-    alert('Please enter a valid Gemini API key (starts with AIza...)');
-    return;
-  }
-  localStorage.setItem('talon_gemini_key', key);
-  apiKey = key;
-  showChat();
-}
-
-function logout() {
-  localStorage.removeItem('talon_gemini_key');
-  apiKey = '';
-  messages = [];
-  document.getElementById('setup-screen').style.display = 'flex';
-  document.getElementById('chat-screen').style.display = 'none';
-  document.getElementById('logout-btn').style.display = 'none';
-}
+// Key injected at build time by TALON github-export.mjs
+// No setup screen needed
 
 // ── Load TALON context ────────────────────────────────────────
 async function loadTalonContext() {
@@ -282,9 +251,7 @@ Answer questions about job search status, TALON system performance, news, and an
 
 // ── Show chat screen ──────────────────────────────────────────
 async function showChat() {
-  document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('chat-screen').style.display  = 'flex';
-  document.getElementById('logout-btn').style.display   = 'block';
+  document.getElementById('chat-screen').style.display = 'flex';
   await loadTalonContext();
   document.getElementById('msg-input').focus();
 }
@@ -426,13 +393,7 @@ function autoResize(el) {
 
 // ── Init ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem('talon_gemini_key');
-  if (saved) { apiKey = saved; showChat(); }
-
-  // Enter key on setup screen
-  document.getElementById('api-key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') saveKey();
-  });
+  showChat();
 });
 </script>
 </body>
