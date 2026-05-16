@@ -1,330 +1,540 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALON Chat</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#030508;--bg2:#070c14;--bg3:#0d1525;--border:rgba(99,179,237,0.12);--border2:rgba(99,179,237,0.28);--blue:#4f8ef7;--cyan:#22d3ee;--green:#34d399;--orange:#fb923c;--red:#f87171;--text:#dde4f0;--muted:#4a5878;--muted2:#6b7fa0;--mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,179,237,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(99,179,237,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-.app{display:flex;flex-direction:column;height:100vh;position:relative;z-index:1}
-header{background:rgba(7,12,20,0.95);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;backdrop-filter:blur(12px)}
-.logo-badge{font-family:var(--mono);font-size:11px;color:var(--cyan);background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);padding:5px 10px;letter-spacing:.1em}
-.header-title{font-size:16px;font-weight:600;letter-spacing:.06em;margin-left:12px}
-.header-title span{color:var(--cyan)}
-.header-right{display:flex;align-items:center;gap:10px}
-.model-badge{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--bg3);border:1px solid var(--border);padding:3px 8px}
-.status-pill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--green);background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);padding:4px 10px}
-.dot{width:5px;height:5px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.change-key-btn{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);padding:4px 10px;cursor:pointer;transition:all .2s}
-.change-key-btn:hover{color:var(--cyan);border-color:var(--border2)}
-
-/* Setup */
-.setup-overlay{position:fixed;inset:0;background:rgba(3,5,8,0.95);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(8px)}
-.setup-card{background:var(--bg2);border:1px solid var(--border2);padding:40px;max-width:460px;width:90%;text-align:center}
-.setup-card h2{font-size:20px;font-weight:600;margin-bottom:8px}
-.setup-card p{font-size:14px;color:var(--muted2);line-height:1.7;margin-bottom:24px}
-.setup-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:12px 14px;outline:none;margin-bottom:12px;transition:border-color .2s}
-.setup-input:focus{border-color:var(--border2)}
-.setup-btn{width:100%;padding:12px;background:var(--cyan);color:var(--bg);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;border:none;cursor:pointer;transition:all .2s}
-.setup-btn:hover{background:var(--blue)}
-.setup-note{font-size:11px;color:var(--muted);margin-top:12px;font-family:var(--mono)}
-.setup-note a{color:var(--blue);text-decoration:none}
-.setup-error{color:var(--red);font-size:12px;font-family:var(--mono);margin-top:8px;display:none}
-
-/* Context bar */
-.context-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
-.ctx-item{font-family:var(--mono);font-size:10px;color:var(--muted2)}
-.ctx-item b{color:var(--text)}
-
-/* Messages */
-.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
-.messages::-webkit-scrollbar{width:3px}
-.messages::-webkit-scrollbar-thumb{background:var(--border2)}
-.welcome{text-align:center;margin:auto;max-width:500px;padding:40px 20px}
-.welcome h3{font-size:22px;font-weight:600;margin-bottom:8px}
-.welcome p{font-size:14px;color:var(--muted2);line-height:1.7;margin-bottom:28px}
-.suggestions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.suggestion{background:var(--bg2);border:1px solid var(--border);padding:12px 14px;font-size:12px;color:var(--muted2);cursor:pointer;text-align:left;transition:all .2s;font-family:var(--sans)}
-.suggestion:hover{border-color:var(--border2);color:var(--text)}
-.suggestion-icon{font-size:14px;margin-bottom:4px;display:block}
-.msg{display:flex;gap:10px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{flex-direction:row-reverse}
-.msg-avatar{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;font-family:var(--mono)}
-.msg.assistant .msg-avatar{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.2);color:var(--cyan)}
-.msg.user .msg-avatar{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.2);color:var(--blue)}
-.msg-content{max-width:72%;background:var(--bg2);border:1px solid var(--border);padding:12px 16px;font-size:14px;line-height:1.7}
-.msg.user .msg-content{background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.2)}
-.msg-content code{font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 5px;color:var(--cyan)}
-.msg-content strong{color:var(--text);font-weight:600}
-.msg-content ul{padding-left:18px;margin:6px 0}
-.msg-content li{margin:3px 0}
-.msg-time{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
-.msg.user .msg-time{text-align:right}
-.typing .msg-content{padding:14px 18px}
-.typing-dots{display:flex;gap:4px;align-items:center}
-.typing-dot{width:6px;height:6px;background:var(--cyan);border-radius:50%;animation:tb .8s ease-in-out infinite}
-.typing-dot:nth-child(2){animation-delay:.15s}
-.typing-dot:nth-child(3){animation-delay:.3s}
-@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.error-bar{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red);padding:10px 14px;font-size:12px;font-family:var(--mono)}
-
-/* Input */
-.input-area{background:var(--bg2);border-top:1px solid var(--border);padding:16px 20px;flex-shrink:0}
-.input-row{display:flex;gap:10px;align-items:flex-end}
-textarea{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:14px;padding:12px 14px;resize:none;outline:none;max-height:140px;min-height:44px;line-height:1.5;transition:border-color .2s}
-textarea:focus{border-color:var(--border2)}
-textarea::placeholder{color:var(--muted)}
-.send-btn{width:44px;height:44px;background:var(--cyan);color:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all .2s}
-.send-btn:hover{background:var(--blue)}
-.send-btn:disabled{background:var(--muted);cursor:not-allowed}
-.input-footer{display:flex;justify-content:space-between;margin-top:8px}
-.input-hint{font-family:var(--mono);font-size:10px;color:var(--muted)}
-.clear-btn{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer}
-.clear-btn:hover{color:var(--red)}
-@media(max-width:600px){.suggestions{grid-template-columns:1fr}.msg-content{max-width:88%}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TALON — AI Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; overflow: hidden; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #020408;
+      color: #e8f4ff;
+    }
+    #stars { position: fixed; inset: 0; z-index: 0; }
+    .app {
+      position: relative;
+      z-index: 1;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      perspective: 1000px;
+      padding: 12px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .chat-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      transform: rotateX(1.5deg);
+      transform-style: preserve-3d;
+      background: rgba(10, 20, 40, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+      position: relative;
+      overflow: hidden;
+      animation: border-glow 4s linear infinite;
+      box-shadow: 0 0 60px rgba(0, 212, 255, 0.08);
+    }
+    .chat-shell::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 22px;
+      background: linear-gradient(120deg, #00d4ff, #0066ff, #00d4ff, #0066ff);
+      background-size: 300% 300%;
+      animation: border-glow 4s linear infinite;
+      z-index: -1;
+    }
+    @keyframes border-glow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: 0.25em;
+      color: #00d4ff;
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+      animation: glitch 3s infinite;
+    }
+    @keyframes glitch {
+      0%, 90%, 100% { transform: translate(0); }
+      92% { transform: translate(-2px, 1px); }
+      94% { transform: translate(2px, -1px); }
+    }
+    .header-meta { font-size: 0.7rem; color: #6b8ab0; font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .online {
+      color: #00d4ff;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
+      font-size: 0.65rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      background: rgba(0, 102, 255, 0.15);
+      color: #00d4ff;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      scroll-behavior: smooth;
+    }
+    .msg {
+      display: flex;
+      margin-bottom: 14px;
+      max-width: 85%;
+    }
+    .msg.user { margin-left: auto; flex-direction: row-reverse; }
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .msg.user .bubble {
+      background: rgba(0, 212, 255, 0.12);
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.25);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+    }
+    .msg.assistant .bubble {
+      background: rgba(0, 40, 80, 0.5);
+      border: 1px solid rgba(0, 102, 255, 0.35);
+    }
+    .bubble pre {
+      background: #0a1628;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      margin: 8px 0;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      cursor: pointer;
+      border: 1px solid #00d4ff;
+      background: transparent;
+      color: #00d4ff;
+      border-radius: 4px;
+    }
+    .model-badge {
+      font-size: 0.6rem;
+      color: #6b8ab0;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .status-line { font-size: 0.75rem; color: #00d4ff; font-style: italic; margin: 8px 0; }
+    .dots span {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: #00d4ff;
+      border-radius: 50%;
+      margin-right: 4px;
+      animation: blink 1.2s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    .composer {
+      padding: 12px 16px 16px;
+      border-top: 1px solid rgba(0, 212, 255, 0.12);
+    }
+    .input-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: rgba(10, 20, 40, 0.9);
+      backdrop-filter: blur(20px);
+      border-radius: 999px;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      padding: 8px 12px 8px 16px;
+      transition: box-shadow 0.2s;
+    }
+    .input-wrap:focus-within {
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.35);
+      border-color: #00d4ff;
+    }
+    textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #e8f4ff;
+      resize: none;
+      max-height: 120px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .send-btn, .file-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #00d4ff, #0066ff);
+      color: #020408;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .file-btn { background: rgba(0, 102, 255, 0.4); color: #00d4ff; font-size: 1rem; }
+    .slash-menu {
+      position: absolute;
+      bottom: 100%;
+      left: 16px;
+      right: 16px;
+      background: rgba(10, 20, 40, 0.95);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .slash-menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      color: #e8f4ff;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .slash-menu button:hover { background: rgba(0, 212, 255, 0.1); }
+    .error-bar {
+      background: rgba(255, 60, 60, 0.15);
+      border: 1px solid rgba(255, 100, 100, 0.4);
+      padding: 10px 16px;
+      margin: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .composer-inner { position: relative; }
+    @media (max-width: 600px) {
+      .app { padding: 6px; }
+      .chat-shell { transform: none; }
+      .msg { max-width: 95%; }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
+  <canvas id="stars"></canvas>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const API = window.location.origin + '/api/chat/stream';
+    const STORAGE_KEY = 'talon_chat_v2';
+    const SLASH = [
+      { cmd: '/think', desc: 'Deep reasoning (qwen2.5:7b)' },
+      { cmd: '/web', desc: 'Fetch URL content' },
+      { cmd: '/search', desc: 'Web search (Serper)' },
+      { cmd: '/file', desc: 'Upload text file' },
+    ];
 
-  <!-- Setup overlay -->
-  <div class="setup-overlay" id="setup-overlay">
-    <div class="setup-card">
-      <div style="font-size:32px;margin-bottom:12px">🔑</div>
-      <h2>Enter Gemini API Key</h2>
-      <p>Your key stays in your browser. It's never stored anywhere else — only sent directly to Google's API when you chat.</p>
-      <input type="password" class="setup-input" id="key-input" placeholder="AIzaSy..." autocomplete="off">
-      <div class="setup-error" id="key-error">Invalid key — must start with AIzaSy</div>
-      <button class="setup-btn" onclick="saveKey()">START CHATTING →</button>
-      <div class="setup-note">
-        Free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>
-        Your existing GEMINI_API_KEY from TALON .env works here too
-      </div>
-    </div>
-  </div>
+    function StarField() {
+      useEffect(() => {
+        const c = document.getElementById('stars');
+        const ctx = c.getContext('2d');
+        let w, h, stars;
+        const resize = () => {
+          w = c.width = window.innerWidth;
+          h = c.height = window.innerHeight;
+          stars = Array.from({ length: 200 }, () => ({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            z: Math.random() * 0.5 + 0.2,
+          }));
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        let t = 0;
+        const draw = () => {
+          t += 0.002;
+          ctx.fillStyle = '#020408';
+          ctx.fillRect(0, 0, w, h);
+          stars.forEach(s => {
+            s.x += s.z * 0.15;
+            if (s.x > w) s.x = 0;
+            ctx.fillStyle = `rgba(200, 230, 255, ${0.3 + s.z * 0.5})`;
+            ctx.fillRect(s.x, s.y + Math.sin(t + s.x) * 2, 1.5, 1.5);
+          });
+          requestAnimationFrame(draw);
+        };
+        draw();
+        return () => window.removeEventListener('resize', resize);
+      }, []);
+      return null;
+    }
 
-  <header>
-    <div style="display:flex;align-items:center">
-      <div class="logo-badge">T A L O N</div>
-      <div class="header-title"><span>TALON</span> Chat</div>
-    </div>
-    <div class="header-right">
-      <span class="model-badge">gemini-2.5-flash</span>
-      <div class="status-pill"><div class="dot"></div>ONLINE</div>
-      <button class="change-key-btn" onclick="changeKey()">CHANGE KEY</button>
-    </div>
-  </header>
+    function renderMarkdown(text) {
+      const html = marked.parse(text || '');
+      return { __html: html };
+    }
 
-  <div class="context-bar" id="context-bar">
-    <div class="ctx-item" id="ctx-loading">⟳ Loading TALON stats...</div>
-  </div>
+    function App() {
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [command, setCommand] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [stream, setStream] = useState('');
+      const [status, setStatus] = useState('');
+      const [error, setError] = useState(null);
+      const [model, setModel] = useState('phi4-mini');
+      const [clock, setClock] = useState('');
+      const [showSlash, setShowSlash] = useState(false);
+      const listRef = useRef(null);
+      const fileRef = useRef(null);
+      const burstRef = useRef(null);
 
-  <div class="messages" id="messages">
-    <div class="welcome" id="welcome">
-      <h3>What do you want to know?</h3>
-      <p>I have live context from your TALON system — job pipeline, news, application status. Ask me anything.</p>
-      <div class="suggestions">
-        <button class="suggestion" onclick="send('What is my current job search status?')"><span class="suggestion-icon">💼</span>Job search status</button>
-        <button class="suggestion" onclick="send('Summarize today\u2019s news brief')"><span class="suggestion-icon">📰</span>Today's news brief</button>
-        <button class="suggestion" onclick="send('How is TALON performing today?')"><span class="suggestion-icon">⚡</span>TALON performance</button>
-        <button class="suggestion" onclick="send('What are my top job matches?')"><span class="suggestion-icon">⭐</span>Top job matches</button>
-      </div>
-    </div>
-  </div>
+      useEffect(() => {
+        try {
+          const s = localStorage.getItem(STORAGE_KEY);
+          if (s) setMessages(JSON.parse(s).slice(-50));
+        } catch {}
+      }, []);
 
-  <div class="input-area">
-    <div class="input-row">
-      <textarea id="msg-input" placeholder="Ask anything..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <button class="send-btn" id="send-btn" onclick="send()">↑</button>
-    </div>
-    <div class="input-footer">
-      <span class="input-hint">Enter to send · Shift+Enter for new line</span>
-      <button class="clear-btn" onclick="clearChat()">Clear</button>
-    </div>
-  </div>
-</div>
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)));
+      }, [messages]);
 
-<script>
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-const STATS_URL  = 'https://thousif3.github.io/talon-stats/stats.json';
+      useEffect(() => {
+        const tick = () => setClock(new Date().toLocaleTimeString());
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+      }, []);
 
-let apiKey   = '';
-let ctx      = null;
-let history  = [];
+      useEffect(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+      }, [messages, stream, status]);
 
-// ── Key management ────────────────────────────────────────────
-function saveKey() {
-  const k = document.getElementById('key-input').value.trim();
-  if (!k || k.length < 20) {
-    document.getElementById('key-error').style.display = 'block';
-    return;
-  }
-  apiKey = k;
-  localStorage.setItem('talon_key', k);
-  document.getElementById('setup-overlay').style.display = 'none';
-  loadStats();
-  document.getElementById('msg-input').focus();
-}
+      const detectCommand = (text) => {
+        const t = text.trim();
+        for (const s of SLASH) {
+          if (t.startsWith(s.cmd)) return s.cmd;
+        }
+        return null;
+      };
 
-function changeKey() {
-  document.getElementById('key-input').value = '';
-  document.getElementById('key-error').style.display = 'none';
-  document.getElementById('setup-overlay').style.display = 'flex';
-}
+      const send = async () => {
+        const text = input.trim();
+        if (!text || loading) return;
+        setError(null);
+        const cmd = detectCommand(text);
+        setCommand(cmd);
+        setModel(cmd === '/think' ? 'qwen2.5:7b' : 'phi4-mini');
+        const userMsg = { role: 'user', content: text };
+        const history = [...messages, userMsg].slice(-20);
+        setMessages(history);
+        setInput('');
+        setLoading(true);
+        setStream('');
+        setStatus('');
 
-// ── Load stats ────────────────────────────────────────────────
-async function loadStats() {
-  try {
-    ctx = await fetch(STATS_URL + '?t=' + Date.now()).then(r => r.json());
-    const p   = ctx.pipeline;
-    const age = ctx.generatedAt ? Math.floor((Date.now() - new Date(ctx.generatedAt)) / 3600000) : null;
-    const stale = age !== null && age > 24;
-    document.getElementById('context-bar').innerHTML = [
-      `<div class="ctx-item">Jobs: <b>${p.jobsScanned}</b></div>`,
-      `<div class="ctx-item">Score 7+: <b>${p.score7plus}</b></div>`,
-      `<div class="ctx-item">Interviews: <b>${p.interviews}</b></div>`,
-      `<div class="ctx-item">Rejections: <b>${p.rejections}</b></div>`,
-      `<div class="ctx-item">CRM: <b>${p.crmTracked}</b></div>`,
-      stale
-        ? `<div class="ctx-item" style="color:var(--orange)">⚠ Data ${age}h old</div>`
-        : `<div class="ctx-item" style="color:var(--green)">● Live · ${ctx.generatedAtET}</div>`,
-    ].join('');
-  } catch {
-    document.getElementById('context-bar').innerHTML = '<div class="ctx-item" style="color:var(--muted)">TALON stats unavailable — general chat only</div>';
-  }
-}
+        if (burstRef.current) {
+          burstRef.current.classList.add('burst');
+          setTimeout(() => burstRef.current?.classList.remove('burst'), 400);
+        }
 
-// ── System prompt ─────────────────────────────────────────────
-function sysPrompt() {
-  const base = `You are TALON — a personal AI built for Thousifuddin Shaik. He's an MS CS student at IU Indianapolis, CSM and CSPO certified, F-1 OPT, targeting PM and BA roles.
+        try {
+          const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: history, command: cmd }),
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
 
-How to talk: Like a sharp friend who actually knows his situation. Not a customer service bot. Not a resume coach. Skip the "Great question!" and "Certainly!". Don't open with "Based on the data provided". Don't end with "I hope this helps!". Just answer. If something's concerning, say so directly. If something looks good, say that too. Mix short punchy sentences with longer ones. Have actual opinions when asked.
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let acc = '';
 
-Never say: "Certainly", "Absolutely", "Of course", "Great question", "I'd be happy to", "Based on the provided context", "It's worth noting", "In summary", "To summarize". Just talk.`;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop() || '';
+            for (const block of parts) {
+              const m = block.match(/^data: (.+)$/);
+              if (!m) continue;
+              try {
+                const d = JSON.parse(m[1]);
+                if (d.type === 'token') { acc += d.text; setStream(acc); }
+                else if (d.type === 'status') setStatus(d.text);
+                else if (d.type === 'error') throw new Error(d.text);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
 
-  if (!ctx) return base + '\n\nNote: Live TALON stats unavailable right now.';
-  const p = ctx.pipeline;
-  const n = ctx.recentNews || {};
-  const jobs = (ctx.topJobs || []).map((j,i) => `${i+1}. ${j.title} @ ${j.company} (${j.location}) — ${j.score}/10`).join('\n');
-  return `${base}
+          const assistant = { role: 'assistant', content: acc || '(empty)' };
+          setMessages([...history, assistant]);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+          setStream('');
+          setStatus('');
+          setCommand(null);
+        }
+      };
 
-His live TALON data right now (${ctx.generatedAtET}):
-- ${p.jobsScanned} jobs scanned, ${p.score7plus} scored 7+, ${p.approved} approved
-- ${p.applications} applications sent, ${p.interviews} interviews, ${p.rejections} rejections
-- ${p.crmTracked} tracked in CRM
+      const onFile = (e) => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          const content = String(r.result).slice(0, 12000);
+          setInput(`/file\n\n${content}`);
+          setCommand('/file');
+        };
+        r.readAsText(f);
+      };
 
-Top job matches:
-${jobs || 'Nothing loaded yet — scan probably pending'}
+      const exportMd = () => {
+        const md = messages.map(m => `**${m.role}**: ${m.content}`).join('\n\n');
+        const blob = new Blob([md], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'talon-chat.md';
+        a.click();
+      };
 
-What the news monitors picked up:
-- Visa/Immigration: ${n.visa || 'nothing recent'}
-- Tech/Hiring: ${n.tech || 'nothing recent'}
-- Breaking: ${n.breaking || 'nothing recent'}
+      const newChat = () => {
+        setMessages([]);
+        localStorage.removeItem(STORAGE_KEY);
+      };
 
-AI spend so far: $${ctx.aiCosts?.totalSpent || 0} across ${ctx.aiCosts?.totalCalls || 0} calls`;
-}
+      return (
+        <div className="app">
+          <StarField />
+          <div className="chat-shell" ref={burstRef}>
+            <header>
+              <div className="logo">TALON</div>
+              <div className="header-meta">
+                <div>{clock}</div>
+                <div className="online">● ONLINE</div>
+                <div className="model-badge">model: {model}</div>
+              </div>
+            </header>
+            <div className="toolbar">
+              <button type="button" onClick={newChat}>New conversation</button>
+              <button type="button" onClick={exportMd}>Export MD</button>
+            </div>
+            {error && (
+              <div className="error-bar">
+                <span>{error}</span>
+                <button type="button" onClick={() => setError(null)}>Retry</button>
+              </div>
+            )}
+            <div className="messages" ref={listRef}>
+              {messages.map((m, i) => (
+                <div key={i} className={`msg ${m.role === 'user' ? 'user' : 'assistant'}`}>
+                  <div className="bubble">
+                    {m.role === 'assistant' ? (
+                      <div dangerouslySetInnerHTML={renderMarkdown(m.content)} />
+                    ) : (
+                      <p style={{ whiteSpace: 'pre-wrap' }}>{m.content}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {status && <div className="status-line">{command === '/think' ? '⚙ ' : ''}{status}</div>}
+              {stream && (
+                <div className="msg assistant">
+                  <div className="bubble">
+                    <div dangerouslySetInnerHTML={renderMarkdown(stream)} />
+                  </div>
+                </div>
+              )}
+              {loading && !stream && (
+                <div className="msg assistant">
+                  <div className="bubble dots"><span /><span /><span /></div>
+                </div>
+              )}
+            </div>
+            <footer className="composer">
+              <div className="composer-inner">
+                {showSlash && (
+                  <div className="slash-menu">
+                    {SLASH.map(s => (
+                      <button key={s.cmd} type="button" onClick={() => { setInput(s.cmd + ' '); setShowSlash(false); }}>
+                        {s.cmd} — {s.desc}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="input-wrap">
+                  <input type="file" ref={fileRef} hidden accept=".txt,.md,.json,.csv,.log" onChange={onFile} />
+                  <button type="button" className="file-btn" onClick={() => fileRef.current?.click()} title="/file">📎</button>
+                  <textarea
+                    value={input}
+                    rows={1}
+                    placeholder="Message TALON… /think /web /search /file"
+                    onChange={e => {
+                      setInput(e.target.value);
+                      setShowSlash(e.target.value === '/' || (e.target.value.startsWith('/') && !e.target.value.includes(' ')));
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+                    }}
+                  />
+                  <button type="button" className="send-btn" onClick={send} disabled={loading}>→</button>
+                </div>
+              </div>
+            </footer>
+          </div>
+        </div>
+      );
+    }
 
-// ── Send ──────────────────────────────────────────────────────
-async function send(text) {
-  const input = document.getElementById('msg-input');
-  const msg   = (text || input.value).trim();
-  if (!msg || !apiKey) return;
-  input.value = '';
-  autoResize(input);
-  document.getElementById('welcome')?.remove();
-  addMsg('user', msg);
-  history.push({ role: 'user', parts: [{ text: msg }] });
-  const tid = addTyping();
-  document.getElementById('send-btn').disabled = true;
-  try {
-    const res  = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: sysPrompt() }] },
-        contents: history,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
-      }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message || data.error.status);
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.';
-    history.push({ role: 'model', parts: [{ text: reply }] });
-    removeEl(tid);
-    addMsg('assistant', reply);
-  } catch(e) {
-    removeEl(tid);
-    addError(e.message);
-  }
-  document.getElementById('send-btn').disabled = false;
-}
-
-// ── DOM ───────────────────────────────────────────────────────
-function addMsg(role, text) {
-  const msgs = document.getElementById('messages');
-  const d    = document.createElement('div');
-  d.className = `msg ${role}`;
-  const t = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Indiana/Indianapolis' });
-  d.innerHTML = `<div class="msg-avatar">${role==='user'?'YOU':'AI'}</div><div><div class="msg-content">${fmt(text)}</div><div class="msg-time">${t} ET</div></div>`;
-  msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function addTyping() {
-  const msgs = document.getElementById('messages');
-  const id   = 'ty' + Date.now();
-  const d    = document.createElement('div');
-  d.className = 'msg assistant typing'; d.id = id;
-  d.innerHTML = '<div class="msg-avatar">AI</div><div class="msg-content"><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>';
-  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
-  return id;
-}
-
-function addError(msg) {
-  const msgs = document.getElementById('messages');
-  const d    = document.createElement('div');
-  d.className = 'error-bar';
-  d.textContent = '⚠ ' + msg + (msg.includes('API_KEY') || msg.includes('key') ? ' — Click CHANGE KEY to update.' : '');
-  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
-}
-
-function removeEl(id) { document.getElementById(id)?.remove(); }
-
-function fmt(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/```[\w]*\n?([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^[•\-] (.+)$/gm,'<li>$1</li>')
-    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
-}
-
-function clearChat() {
-  history = [];
-  const msgs = document.getElementById('messages');
-  msgs.innerHTML = `<div class="welcome" id="welcome"><h3>What do you want to know?</h3><p>I have live context from your TALON system — job pipeline, news, application status. Ask me anything.</p><div class="suggestions"><button class="suggestion" onclick="send('What is my current job search status?')"><span class="suggestion-icon">💼</span>Job search status</button><button class="suggestion" onclick="send('Summarize today\u2019s news brief')"><span class="suggestion-icon">📰</span>Today's news brief</button><button class="suggestion" onclick="send('How is TALON performing today?')"><span class="suggestion-icon">⚡</span>TALON performance</button><button class="suggestion" onclick="send('What are my top job matches?')"><span class="suggestion-icon">⭐</span>Top job matches</button></div></div>`;
-}
-
-function handleKey(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px'; }
-
-// ── Init ──────────────────────────────────────────────────────
-window.addEventListener('load', () => {
-  const saved = localStorage.getItem('talon_key');
-  if (saved) {
-    apiKey = saved;
-    document.getElementById('setup-overlay').style.display = 'none';
-    loadStats();
-    document.getElementById('msg-input').focus();
-  }
-  document.getElementById('key-input').addEventListener('keydown', e => { if (e.key==='Enter') saveKey(); });
-});
-</script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
